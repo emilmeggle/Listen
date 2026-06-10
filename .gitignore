@@ -1,0 +1,19 @@
+# Build artifacts
+/Listen
+/LLMListen
+*.app/
+AppIcon.iconset/
+
+# Local scaffolding / machine-specific
+hero.html
+llml-cert.pem
+.claude-screenshots/
+.DS_Store
+
+# Test transcripts that may land in the repo during local runs
+call-*.md
+audio-*.md
+*.summary.md
+
+# Local recordings
+transcripts/

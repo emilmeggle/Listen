@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLMListen — Build Plan</title>
+<style>
+  :root {
+    --bg: #f7f6f3;
+    --card: #ffffff;
+    --ink: #1a1a1a;
+    --muted: #6b6b6b;
+    --accent: #0a7d4f;
+    --accent-soft: #e6f4ee;
+    --warn: #b45309;
+    --warn-soft: #fef3e2;
+    --line: #e5e2dc;
+    --mono: "SF Mono", ui-monospace, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px;
+    background: var(--bg); color: var(--ink);
+    font: 16px/1.6 -apple-system, "SF Pro Text", Helvetica, sans-serif;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  h1 { font-size: 30px; margin: 0 0 4px; letter-spacing: -0.5px; }
+  .subtitle { color: var(--muted); margin: 0 0 32px; }
+  h2 {
+    font-size: 20px; margin: 40px 0 12px; letter-spacing: -0.3px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  h2 .num {
+    background: var(--ink); color: #fff; font-size: 13px;
+    width: 26px; height: 26px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 12px; padding: 20px 24px; margin: 12px 0;
+  }
+  .verdict {
+    background: var(--accent-soft); border: 1px solid #bfe3d3;
+    border-radius: 12px; padding: 20px 24px; margin: 16px 0;
+  }
+  .verdict strong { color: var(--accent); }
+  code {
+    font-family: var(--mono); font-size: 13.5px;
+    background: #f0efeb; padding: 2px 6px; border-radius: 5px;
+  }
+  pre {
+    font-family: var(--mono); font-size: 13.5px; line-height: 1.55;
+    background: #14141a; color: #e8e8ea; padding: 16px 18px;
+    border-radius: 10px; overflow-x: auto; margin: 12px 0;
+  }
+  pre .c { color: #7d8590; }
+  pre .g { color: #7ee2a8; }
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; margin: 12px 0; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+  .yes { color: var(--accent); font-weight: 600; }
+  .no { color: #b3261e; }
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 600;
+    padding: 2px 10px; border-radius: 99px; margin-left: 8px;
+    background: var(--accent-soft); color: var(--accent); vertical-align: middle;
+  }
+  .pill.opt { background: #eee; color: var(--muted); }
+  .flow { display: flex; align-items: stretch; gap: 0; flex-wrap: wrap; margin: 16px 0; }
+  .flow .step {
+    flex: 1; min-width: 150px; background: var(--card);
+    border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px;
+    position: relative; margin-right: 28px;
+  }
+  .flow .step:last-child { margin-right: 0; }
+  .flow .step::after {
+    content: "→"; position: absolute; right: -22px; top: 50%;
+    transform: translateY(-50%); color: var(--muted); font-size: 18px;
+  }
+  .flow .step:last-child::after { content: ""; }
+  .flow .step b { display: block; font-size: 14px; margin-bottom: 3px; }
+  .flow .step span { font-size: 12.5px; color: var(--muted); line-height: 1.45; display: block; }
+  .risk { background: var(--warn-soft); border: 1px solid #f3ddb8; border-radius: 12px; padding: 16px 24px; margin: 12px 0; }
+  .risk b { color: var(--warn); }
+  ul { padding-left: 22px; margin: 8px 0; }
+  li { margin: 5px 0; }
+  .est { float: right; font-size: 13px; color: var(--muted); font-weight: 400; }
+  .q { font-weight: 600; }
+  footer { margin-top: 48px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 16px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>LLMListen — Build Plan</h1>
+  <p class="subtitle">Capture system audio (calls, meetings, videos) for up to 2 hours · transcribe locally · hand the text to any LLM. Plan as of June 10, 2026.</p>
+
+  <div class="verdict">
+    <strong>Verdict: don't build the hard part — wrap it.</strong><br>
+    Your Mac runs macOS 26.5, which ships Apple's new on-device transcription engine (SpeechAnalyzer) and native system-audio taps. The open-source CLI <strong>yap</strong> (CC0 / public domain, single binary via Homebrew) already combines both: <code>yap listen</code> transcribes system audio live, <code>yap listen-and-dictate</code> adds your microphone — exactly what a call needs. The plan: a thin wrapper script <code>llmlisten</code> around yap that adds session management, transcript files, and a one-flag LLM handoff. No accounts, no cloud, no virtual audio drivers, no background daemons.
+  </div>
+
+  <h2><span class="num">1</span>What your machine already has</h2>
+  <div class="card">
+    <table>
+      <tr><th>Check</th><th>Result</th><th>Why it matters</th></tr>
+      <tr><td>macOS version</td><td class="yes">26.5 ✓</td><td>SpeechAnalyzer (fast, free, on-device transcription) requires macOS 26+</td></tr>
+      <tr><td>System-audio capture API</td><td class="yes">native ✓</td><td>Core Audio process taps — no BlackHole / virtual cable needed</td></tr>
+      <tr><td>Xcode + Swift 6.3</td><td class="yes">installed ✓</td><td>Plan B (build from scratch) is fully available if needed</td></tr>
+      <tr><td>German + English</td><td class="yes">supported ✓</td><td>SpeechAnalyzer locale is selectable per session (<code>-l de-DE</code> / <code>en-US</code>)</td></tr>
+    </table>
+  </div>
+
+  <h2><span class="num">2</span>Options considered</h2>
+  <div class="card">
+    <table>
+      <tr><th>Option</th><th>Lightweight</th><th>Private</th><th>Effort</th><th>Decision</th></tr>
+      <tr><td><b>Wrap yap CLI</b> (open source, Apple-native engine)</td><td class="yes">✓ one binary</td><td class="yes">✓ 100% local</td><td>~2–3 h total</td><td class="yes">→ Chosen</td></tr>
+      <tr><td>Granola.ai</td><td class="no">✗ full app + account</td><td class="no">✗ cloud</td><td>low</td><td>Rejected: subscription, cloud, not "your LLM of choice"</td></tr>
+      <tr><td>Screenpipe</td><td class="no">✗ always-on daemon</td><td class="yes">✓</td><td>low</td><td>Rejected: records everything continuously — overkill</td></tr>
+      <tr><td>QuickTime + BlackHole + upload</td><td class="no">✗ audio rerouting hack</td><td>depends</td><td>medium</td><td>Rejected: fiddly routing, manual every time, obsolete on macOS 26</td></tr>
+      <tr><td>Build Swift app from scratch</td><td class="yes">✓</td><td class="yes">✓</td><td>~1–2 days</td><td>Kept as <b>Plan B</b> (see §6)</td></tr>
+    </table>
+  </div>
+
+  <h2><span class="num">3</span>Architecture</h2>
+  <div class="flow">
+    <div class="step"><b>Capture</b><span>Core Audio tap: system audio (+ optional mic) — handled by yap</span></div>
+    <div class="step"><b>Transcribe</b><span>SpeechAnalyzer, live &amp; on-device, locale de-DE or en-US</span></div>
+    <div class="step"><b>Store</b><span>Timestamped Markdown in <code>~/LLMListen/transcripts/</code> + clipboard</span></div>
+    <div class="step"><b>Hand off</b><span>Pipe to <code>claude -p</code>, or any configured LLM command / API</span></div>
+  </div>
+  <div class="card">
+    Target usage — the whole tool is one command:
+    <pre><span class="c"># start before the call; Ctrl-C (or auto-stop at 2 h) ends it</span>
+<span class="g">llmlisten</span>                          <span class="c"># system audio only (videos, recordings)</span>
+<span class="g">llmlisten --mic</span>                    <span class="c"># call mode: both sides of the conversation</span>
+<span class="g">llmlisten --lang de</span>                <span class="c"># German session</span>
+
+<span class="c"># after the call</span>
+<span class="g">llmlisten last</span>                     <span class="c"># print / copy the latest transcript</span>
+<span class="g">llmlisten last --to claude "summarize, list action items"</span>
+<span class="g">llmlisten last --to "uvx llm -m gpt-5"</span>   <span class="c"># any LLM you like</span></pre>
+  </div>
+
+  <h2><span class="num">4</span>Build phases</h2>
+  <div class="card">
+    <b>Phase 0 — Validate the foundation <span class="est">~20 min</span></b>
+    <ul>
+      <li><code>brew install yap</code>, grant the one-time Screen Recording permission (that's how macOS gates system-audio capture).</li>
+      <li>Smoke test: play a YouTube video, run <code>yap listen</code>, check quality in English and German.</li>
+      <li>Endurance test: run against a long podcast for 45+ min to confirm stability before trusting it with a 2 h call.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <b>Phase 1 — The <code>llmlisten</code> wrapper <span class="est">~1 h</span></b>
+    <ul>
+      <li>Single shell script (~100 lines), installed on your PATH. No build step, trivially editable.</li>
+      <li>Starts <code>yap listen</code> / <code>listen-and-dictate</code>, streams text live to the terminal <i>and</i> to <code>~/LLMListen/transcripts/2026-06-10_1430.md</code> with a date/time header.</li>
+      <li>Auto-stop safety at 2 h; auto-restart + append if yap ever crashes mid-session (so a hiccup at minute 90 doesn't lose the call).</li>
+      <li>On stop: copies transcript to clipboard, prints word count + file path.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <b>Phase 2 — LLM handoff <span class="est">~30 min</span></b>
+    <ul>
+      <li><code>llmlisten last --to &lt;cmd&gt; "prompt"</code> pipes the transcript into any command: <code>claude -p</code> by default, but any CLI/API wrapper works — that's your "LLM of choice".</li>
+      <li>Tiny config file (<code>~/.llmlistenrc</code>) for defaults: language, mic on/off, favorite LLM command.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <b>Phase 3 — Menu bar app <span class="pill">chosen per Emil's request</span> <span class="est">~1 h</span></b>
+    <ul>
+      <li>Instead of a CLI wrapper: a tiny native menu bar app (one Swift file, AppKit only) — waveform icon in the top bar, click to start/stop, red dot + elapsed timer while recording, "Summarize with Claude" in the menu.</li>
+      <li>Phases 1–3 merge into this single app; same behavior (transcript files, 2 h cap, crash restart, clipboard, LLM handoff).</li>
+      <li>Future option: <code>--keep-audio</code> safety net that also saves raw audio for important calls.</li>
+    </ul>
+  </div>
+
+  <h2><span class="num">5</span>Risks &amp; honest caveats</h2>
+  <div class="risk"><b>No raw audio by default.</b> yap transcribes live and discards audio. If transcription stumbles (heavy accents, bad call quality), there's no recording to retry from. Mitigation: the Phase 3 <code>--keep-audio</code> flag for high-stakes calls.</div>
+  <div class="risk"><b>2-hour stability is assumed, not proven.</b> No documented duration limit, but the endurance test in Phase 0 is mandatory before relying on it. The auto-restart logic in Phase 1 is the belt-and-suspenders.</div>
+  <div class="risk"><b>One language per session.</b> SpeechAnalyzer transcribes in one locale at a time. Mixed German/English calls will favor whichever language you set; fully mixed conversations are the weak spot of every on-device engine.</div>
+  <div class="risk"><b>Consent.</b> Recording calls requires the other party's consent in Germany (§201 StGB) and many other jurisdictions. The tool will print a brief reminder on start.</div>
+
+  <h2><span class="num">6</span>Plan B — from scratch <span class="pill opt">only if yap falls short</span></h2>
+  <div class="card">
+    If Phase 0 reveals dealbreakers (instability, poor quality), build a small Swift CLI (~400 lines, 1–2 days) using two proven open-source references: <b>AudioCap</b> by Guilherme Rambo (BSD-2, the canonical Core Audio process-tap implementation) for capture, plus Apple's SpeechAnalyzer API for transcription — or whisper.cpp if Apple's engine itself is the problem. Same wrapper interface on top, so nothing else changes.
+  </div>
+
+  <h2><span class="num">7</span>Decisions I'd like from you</h2>
+  <div class="card">
+    <ul>
+      <li><span class="q">Mic by default?</span> For calls you almost certainly want your own voice too (<code>--mic</code> as the default) — confirm.</li>
+      <li><span class="q">Default LLM?</span> I'd wire <code>claude -p</code> as the default handoff since Claude Code is already on this machine — confirm or name another.</li>
+      <li><span class="q">Default language?</span> German, English, or ask per session?</li>
+    </ul>
+    None of these block the start — I'd begin Phase 0 + 1 with sensible defaults (mic on, Claude, ask-per-session) and adjust.
+  </div>
+
+  <footer>
+    Sources: github.com/finnvoor/yap (CC0) · github.com/insidegui/AudioCap (BSD-2) · Apple SpeechAnalyzer / Core Audio taps (macOS 26) · Environment verified locally on this Mac (macOS 26.5, Xcode 26, Swift 6.3.1).
+  </footer>
+</main>
+</body>
+</html>
