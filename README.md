@@ -69,7 +69,3 @@ To launch at login: System Settings → General → Login Items → add Listen.
 
 - [**yap**](https://github.com/finnvoor/yap) by Finn Voorhees (CC0) — the on-device transcription engine this wraps.
 - [**AudioCap**](https://github.com/insidegui/AudioCap) by Guilherme Rambo (BSD-2) — reference for Core Audio process taps.
-
-## License
-
-MIT — see [LICENSE](LICENSE).
