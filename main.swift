@@ -55,6 +55,7 @@ final class Recorder: ObservableObject {
     @Published var statusMessage = "Ready"
 
     private var proc: Process?
+    private var qlProc: Process?
     private var userStopped = false
     private var startDate: Date?
     private var restartCount = 0
@@ -313,6 +314,20 @@ final class Recorder: ObservableObject {
         return true
     }
 
+    // Read-only spacebar-style preview — avoids launching a heavy editor (Xcode)
+    // for .md files, regardless of the system default handler.
+    func quickLook(_ url: URL) {
+        qlProc?.terminate()
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: "/usr/bin/qlmanage")
+        p.arguments = ["-p", url.path]
+        p.standardOutput = FileHandle.nullDevice
+        p.standardError = FileHandle.nullDevice
+        try? p.run()
+        qlProc = p
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
     // MARK: Claude handoff
 
     func openInClaude() {
@@ -497,8 +512,8 @@ struct CardView: View {
                 cardAction("folder", "Recordings") {
                     NSWorkspace.shared.open(settings.saveDirURL)
                 }
-                cardAction("doc.text", "Last", disabled: recorder.lastTranscript() == nil) {
-                    if let url = recorder.lastTranscript() { NSWorkspace.shared.open(url) }
+                cardAction("eye", "Preview", disabled: recorder.lastTranscript() == nil) {
+                    if let url = recorder.lastTranscript() { recorder.quickLook(url) }
                 }
                 cardAction("sparkles", "Open in Claude", disabled: recorder.lastTranscript() == nil) {
                     recorder.openInClaude()
